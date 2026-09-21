@@ -1,21 +1,43 @@
-# Initial defaults; tune once the simulator runs.
+horizon: 60
+containment_threshold: 2
+
 graph:
   num_nodes: 750
   attachment_edges: 3
-
-horizon: 50
+  base_reshare_prob: 0.1
+  trust_range: [0.6, 1.4]
+  sockpuppet_trust: 1.0
 
 spreader:
-  posts_per_round: 2
+  posts_per_round: 3
+  campaign_rounds: 20
   sockpuppets_per_round: 1
+  max_sockpuppets: 10
+  sockpuppet_links: 8
+  hub_fraction: 0.05
 
 moderator:
-  budget_per_round: 5
-  lam: 1.0
+  budget_per_round: 2
+  lam: 10.0
   detection_delay: 1
+  rate_limit_factor: 0.3
+  kb_coverage: 0.7
+  queue_ttl: 25
+  unknown_policy: adaptive
+  lookahead: 3.0
+  escalate_threshold: 1.0
+  escalation_capacity: 2
+  escalation_delay: 3
+  escalation_accuracy: 0.95
+
+claims:
+  organic_rate: 1.0
+  organic_false_prob: 0.1
+  evidence_noise: 0.15
 
 shock:
-  round: 20
-  num_spreaders: 10
+  round: 30
+  num_spreaders: 12
+  duration: 3
 
-seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+seeds: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29]

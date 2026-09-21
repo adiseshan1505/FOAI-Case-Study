@@ -1,0 +1,7 @@
+comparison,mean_diff_rounds,ci_low,ci_high,supported
+fifo - impact_weighted | random spreader,8.1,5.13,10.7,True
+random - impact_weighted | random spreader,9.0,6.53,11.37,True
+impact_static - impact_weighted | random spreader,4.57,1.67,7.2,True
+fifo - impact_weighted | centrality spreader,5.6,3.83,7.3,True
+random - impact_weighted | centrality spreader,5.93,3.8,8.03,True
+impact_static - impact_weighted | centrality spreader,5.83,3.5,7.9,True

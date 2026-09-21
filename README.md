@@ -5,7 +5,7 @@ A multi-agent adversarial simulation for the Foundations of AI (FOAI) case study
 
 ![Type](https://img.shields.io/badge/type-multi--agent%20simulation-1f4e79)
 ![Agents](https://img.shields.io/badge/agent%20types-2-1f4e79)
-![Status](https://img.shields.io/badge/status-design%20phase-orange)
+![Status](https://img.shields.io/badge/status-working%20prototype-2e7d32)
 
 ---
 
@@ -22,7 +22,10 @@ A multi-agent adversarial simulation for the Foundations of AI (FOAI) case study
 - [Evaluation Plan](#evaluation-plan)
 - [Scope and Assumptions](#scope-and-assumptions)
 - [Tech Stack](#tech-stack)
-- [Planned Repository Layout](#planned-repository-layout)
+- [Getting Started](#getting-started)
+- [Repository Layout](#repository-layout)
+- [How It Is Modeled](#how-it-is-modeled)
+- [Results](#results)
 - [Project Status](#project-status)
 - [References](#references)
 
@@ -168,11 +171,11 @@ How the matrix maps to the hypotheses:
 
 | Metric | Description |
 |---|---|
-| Total exposure | Area under the infection curve |
-| Peak infection | Maximum number of simultaneously exposed nodes |
-| Time-to-containment | Rounds until spread is contained |
+| Total exposure | Area under the infection curve, i.e. users exposed to false claims summed over all rounds |
+| Peak infection | Largest number of users newly exposed to false claims in a single round |
+| Time-to-containment | Rounds until new false exposures stay at or below a threshold (default 2 per round); reported as the horizon if never reached |
 | False-positive rate | Share of takedowns applied to true content |
-| Post-shock recovery time | Rounds to regain containment after the bot-swarm shock |
+| Post-shock recovery time | Rounds after the shock round until new false exposures settle back at or below the threshold |
 
 ## Scope and Assumptions
 
@@ -186,18 +189,16 @@ How the matrix maps to the hypotheses:
 
 ## Tech Stack
 
-> Proposed stack. Nothing is installed or implemented yet.
-
 | Area | Choice | Used for |
 |---|---|---|
-| Language | Python 3.10+ | Entire simulator, agents, and experiment runners |
-| Graph | [NetworkX](https://networkx.org/) | Scale-free graph generation (Barabási–Albert), degree and betweenness centrality, node and edge attributes |
+| Language | Python 3.10+ (developed on 3.14) | Entire simulator, agents, and experiment runners |
+| Graph | [NetworkX](https://networkx.org/) | Scale-free graph generation (Barabási–Albert) and degree centrality |
 | Numerics | [NumPy](https://numpy.org/) | Seeded random number generation for reproducible runs, and vectorized metric calculations |
 | Data handling | [pandas](https://pandas.pydata.org/) | Collecting per-round logs and aggregating results across seeds and conditions |
 | Plotting | [Matplotlib](https://matplotlib.org/) | Infection curves, the λ exposure vs. false-positive frontier, and shock recovery plots |
 | Configuration | [PyYAML](https://pyyaml.org/) | Experiment configs for the C1–C6 conditions and the λ sweep |
 | Testing | [pytest](https://docs.pytest.org/) | Unit tests for cascade dynamics, inference, and policies |
-| Knowledge base | Custom pure-Python Horn-clause engine | Hand-authored facts and rules with forward or backward chaining, kept in-house so the inference stays transparent |
+| Knowledge base | Custom pure-Python Horn-clause engine | Hand-authored facts and rules queried by backward chaining, kept in-house so the inference stays transparent |
 
 Design choices:
 
@@ -205,15 +206,44 @@ Design choices:
   policies, which keeps the comparison between strategies clean.
 - **Reproducibility.** Every run takes an explicit seed, and each experiment
   condition is repeated over a fixed list of seeds.
-- **Dependencies** are listed in `requirements.txt`.
+- **Dependencies** are declared in `pyproject.toml` and mirrored in
+  `requirements.txt`.
 
-## Planned Repository Layout
+## Getting Started
 
-> The scaffold below is in place. Python modules are stubs with no logic yet.
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+
+pytest                                   # unit and simulation tests
+
+python experiments/run_matrix.py         # C1-C6 matrix (H1, H2)
+python experiments/run_shock.py          # bot-swarm shock in every condition (H3)
+python experiments/run_lambda_sweep.py   # exposure vs. false-positive frontier (RQ3)
+```
+
+Each runner writes CSV tables and a PNG chart to `results/`. Useful flags:
+
+| Flag | Applies to | Effect |
+|---|---|---|
+| `--seeds N` | all runners | Use seeds `0..N-1` instead of the config's seed list |
+| `--config PATH` | all runners | Use a different config (default `experiments/configs/default.yaml`) |
+| `--out DIR` | all runners | Write results somewhere other than `results/` |
+| `--k N` | `run_shock.py` | Rounds allowed for recovery in the H3 check (default 15) |
+| `--with-static` | `run_shock.py` | Add an ablation whose impact ranking is frozen when a claim is first seen |
+| `--condition C6` | `run_lambda_sweep.py` | Which condition to sweep |
+| `--lams 0,1,10,100` | `run_lambda_sweep.py` | The λ values to try |
+
+All parameters (graph size, budget `B`, λ, shock size, KB coverage, and so on)
+live in `experiments/configs/default.yaml`.
+
+## Repository Layout
 
 ```text
 FOAI-Case-Study/
 ├── README.md
+├── pyproject.toml
 ├── requirements.txt
 ├── .gitignore
 ├── docs/
@@ -250,13 +280,15 @@ FOAI-Case-Study/
 │   ├── configs/
 │   │   ├── default.yaml
 │   │   └── conditions.yaml
+│   ├── common.py
 │   ├── run_matrix.py
 │   ├── run_lambda_sweep.py
 │   └── run_shock.py
 ├── tests/
 │   ├── test_cascade.py
 │   ├── test_inference.py
-│   └── test_policies.py
+│   ├── test_policies.py
+│   └── test_simulation.py
 ├── results/
 └── report/
 ```
@@ -264,27 +296,155 @@ FOAI-Case-Study/
 | Path | Responsibility |
 |---|---|
 | `src/infodemic/env/` | Scale-free graph, node states, claims with hidden labels, Independent Cascade dynamics, and the round-by-round simulation loop |
-| `src/infodemic/agents/` | The two agent types: spreader (post, reshare, sockpuppets) and moderator (flag, quarantine, counter-claim, escalate) |
+| `src/infodemic/agents/` | The two agent types: spreader (post, reshare, sockpuppets) and moderator (flag, verify, quarantine, rate-limit, escalate) |
 | `src/infodemic/policies/` | Swappable strategies: random and centrality-informed seeding; random, FIFO, and impact-weighted moderation |
 | `src/infodemic/kb/` | Hand-authored facts and rules, and Horn-clause inference for verifying claims |
 | `src/infodemic/scenarios/` | The coordinated bot-swarm shock |
 | `src/infodemic/metrics.py` | Total exposure, peak infection, time-to-containment, false-positive rate, post-shock recovery time |
-| `experiments/` | Configs and runners for the C1–C6 matrix, the λ sweep, and the shock runs, including seed lists |
-| `tests/` | Unit tests for the cascade, inference, and policy logic |
-| `results/` | Raw run outputs and aggregated tables and plots |
-| `report/` | Write-up and figures |
+| `experiments/` | Configs, shared helpers (`common.py`), and runners for the C1–C6 matrix, the λ sweep, and the shock runs |
+| `tests/` | Unit tests for the cascade, inference, policies, metrics, config, and full simulation runs |
+| `results/` | Generated CSV tables and charts |
+| `report/` | Write-up and figures (not started) |
+
+## How It Is Modeled
+
+**Round order.** Each round is one Independent Cascade hop per claim. In order:
+spreaders act, organic claims arrive, the moderator acts, then every claim
+spreads one hop.
+
+**Claims and the knowledge base.** Claims are predicates over a synthetic world
+of countries, capitals, regions, and blocs (`capital_of`, `located_in`,
+`allied`). The moderator's knowledge base holds a random 70% of the world's base
+facts plus hand-written Horn rules, and answers by backward chaining with a
+`TRUE`, `FALSE`, or `UNKNOWN` verdict. Negative knowledge uses rules such as
+`not_capital_of(X, C) :- capital_of(X, D), neq(C, D)`. The knowledge base is
+sound but incomplete: it never gives a wrong verdict, and about 40% of claims
+come back `UNKNOWN`. False positives therefore come only from acting on
+unresolved claims.
+
+**What the moderator sees.** A claim view with no hidden label: a noisy content
+score, propagation velocity (users exposed in the last hop), reach (summed degree
+of current carriers), and a per-source credibility ledger built from past
+verdicts. These are combined into an estimated probability that the claim is
+false.
+
+**Moderator decisions.**
+- *Selection:* `random`, `fifo`, or `impact_weighted`. Impact is velocity × reach,
+  multiplied by the estimated probability of falsehood so that checks are not
+  spent on likely-true claims. `impact_static` freezes that score when a claim is
+  first seen, which isolates re-ranking from impact scoring in the shock runs.
+- *Verified false:* quarantine, which halts spread. A separate counter-claim
+  action is not modeled.
+- *Unresolved:* under the default `adaptive` rule the moderator rate-limits
+  provisionally when `p_false × expected next-hop exposure × lookahead × (1 −
+  rate_limit_factor) > λ × (1 − p_false)`, and escalates to a slow, capacity-limited
+  human review (95% accurate) when the potential harm is high enough. Rate-limiting
+  scales reshare probability by `rate_limit_factor`. This is where λ acts.
+- *Cost of an error:* a claim counts as a false positive if it was ever
+  rate-limited or quarantined while true, even if a later review released it.
+
+**Spreader.** Each spreader seeds false claims at random nodes or at hubs (top 5%
+by degree centrality). It sees only the public log of suppressions. If one of its
+own claims was suppressed in the last three rounds, it deploys sockpuppets, posts
+from those fresh identities (which have no credibility history), and has them
+reshare its strongest live claim. Sockpuppets are extra nodes linked to targeted
+accounts; they carry claims but are never counted as exposed users.
+
+**Bot-swarm shock.** At the shock round, `num_spreaders` extra non-adaptive
+spreaders post simultaneously for `duration` rounds, using the same targeting
+policy as the row being tested. The main spreader's campaign ends before the
+shock, so containment can be reached first and recovery measured against an
+absolute threshold.
+
+**Reproducibility.** Each component draws from its own seeded random stream. A
+given seed produces the same graph, knowledge base, and organic claims in every
+condition, so comparisons are paired by seed and confidence intervals come from a
+paired bootstrap.
+
+## Results
+
+Default config, 30 seeds per condition. The moderator's budget `B = 2` and the
+spreader's 3 posts per round were chosen so that verification is scarce; the
+results have not been checked for sensitivity to those settings. Full tables are
+in `results/`.
+
+### H1 and H2: informed play vs. uninformed play
+
+![Total exposure by targeting and moderation policy](results/matrix_exposure.png)
+
+| Spreader \ Moderator | Random | FIFO | Impact-weighted |
+|---|---|---|---|
+| **Random targeting** | C1: 435 | C2: 451 | C3: 232 |
+| **Centrality-informed** | C4: 858 | C5: 934 | C6: 234 |
+
+Mean total exposure. Differences below are paired by seed, with 95% bootstrap
+confidence intervals.
+
+| Hypothesis | Comparison | Mean difference | 95% CI | Supported |
+|---|---|---|---|---|
+| H1 | Centrality − random targeting, random moderator | +423 | [365, 483] | Yes |
+| H1 | Centrality − random targeting, FIFO moderator | +482 | [426, 540] | Yes |
+| H1 | Centrality − random targeting, impact-weighted moderator | +2 | [−24, 30] | **No** |
+| H2 | FIFO − impact-weighted, random spreader | +219 | [168, 273] | Yes |
+| H2 | Random − impact-weighted, random spreader | +202 | [162, 246] | Yes |
+| H2 | FIFO − impact-weighted, centrality spreader | +700 | [641, 759] | Yes |
+| H2 | Random − impact-weighted, centrality spreader | +623 | [560, 686] | Yes |
+
+H1 holds against the random and FIFO moderators but not against the
+impact-weighted one. A likely reason is that hub-seeded claims have large impact
+scores, so the impact-weighted moderator checks them first; this explanation has
+not been tested separately.
+
+### H3: bot-swarm shock
+
+![Incidence of false exposures around the bot-swarm shock](results/shock_recovery.png)
+
+| Condition | Total exposure | Mean recovery (rounds) | Recovered within 15 rounds |
+|---|---|---|---|
+| C1 random / random | 1228 | 19.2 | 30% |
+| C2 random / FIFO | 1234 | 18.3 | 43% |
+| C3 random / impact-weighted | 577 | 10.2 | 87% |
+| C4 centrality / random | 3056 | 19.5 | 20% |
+| C5 centrality / FIFO | 3318 | 19.2 | 13% |
+| C6 centrality / impact-weighted | 1846 | 13.6 | 87% |
+
+Recovery is faster with the impact-weighted moderator, by 5.6 to 9.0 rounds
+against FIFO and random (all four 95% CIs exclude zero). Nearly all runs
+(93% or more) eventually recover, so the difference is speed, not whether the
+system recovers at all. In the `--with-static` ablation, freezing the impact
+ranking costs 4.6 rounds against random targeting and 5.8 against centrality
+targeting, and under centrality targeting it recovers no faster than FIFO.
+
+### RQ3: the λ trade-off
+
+![Exposure vs. false-positive frontier](results/lambda_frontier.png)
+
+Condition C6, no shock.
+
+| λ | Total exposure | False positives per run | False-positive rate |
+|---|---|---|---|
+| 0 | 175 | 8.20 | 13.8% |
+| 1 | 181 | 3.97 | 7.4% |
+| 5 | 198 | 1.77 | 3.4% |
+| 10 | 234 | 0.90 | 1.8% |
+| 50 | 344 | 0.10 | 0.2% |
+| 200 | 430 | 0.07 | 0.1% |
+
+Exposure falls slowly as λ drops from 5 to 0 while false positives keep rising,
+so most of the benefit of aggression is captured by moderate values of λ.
 
 ## Project Status
 
 | Milestone | Status |
 |---|---|
 | Problem statement and design | Done |
-| Environment (graph + Independent Cascade) | Planned |
-| Knowledge base and Horn-clause inference | Planned |
-| Spreader and moderator policies | Planned |
-| Bot-swarm shock scenario | Planned |
-| C1–C6 experiments and λ sweep | Planned |
-| Analysis and report | Planned |
+| Environment (graph + Independent Cascade) | Done |
+| Knowledge base and Horn-clause inference | Done |
+| Spreader and moderator policies | Done |
+| Bot-swarm shock scenario | Done |
+| C1–C6 experiments and λ sweep | Done for the default config |
+| Sensitivity analysis (budget `B`, KB coverage, graph size) | Not started |
+| Analysis and report | Not started |
 
 ## References
 

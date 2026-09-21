@@ -21,6 +21,7 @@ A multi-agent adversarial simulation for the Foundations of AI (FOAI) case study
 - [Research Questions and Hypotheses](#research-questions-and-hypotheses)
 - [Evaluation Plan](#evaluation-plan)
 - [Scope and Assumptions](#scope-and-assumptions)
+- [Tech Stack](#tech-stack)
 - [Planned Repository Layout](#planned-repository-layout)
 - [Project Status](#project-status)
 - [References](#references)
@@ -182,6 +183,29 @@ How the matrix maps to the hypotheses:
   creation.
 - The knowledge base is **small and hand-authored**, so results characterize the
   *decision strategy*, not real-world fact-checking accuracy.
+
+## Tech Stack
+
+> Proposed stack. Nothing is installed or implemented yet.
+
+| Area | Choice | Used for |
+|---|---|---|
+| Language | Python 3.10+ | Entire simulator, agents, and experiment runners |
+| Graph | [NetworkX](https://networkx.org/) | Scale-free graph generation (Barabási–Albert), degree and betweenness centrality, node and edge attributes |
+| Numerics | [NumPy](https://numpy.org/) | Seeded random number generation for reproducible runs, and vectorized metric calculations |
+| Data handling | [pandas](https://pandas.pydata.org/) | Collecting per-round logs and aggregating results across seeds and conditions |
+| Plotting | [Matplotlib](https://matplotlib.org/) | Infection curves, the λ exposure vs. false-positive frontier, and shock recovery plots |
+| Configuration | [PyYAML](https://pyyaml.org/) | Experiment configs for the C1–C6 conditions and the λ sweep |
+| Testing | [pytest](https://docs.pytest.org/) | Unit tests for cascade dynamics, inference, and policies |
+| Knowledge base | Custom pure-Python Horn-clause engine | Hand-authored facts and rules with forward or backward chaining, kept in-house so the inference stays transparent |
+
+Design choices:
+
+- **No agent framework or ML library.** Both agents use explicit, inspectable
+  policies, which keeps the comparison between strategies clean.
+- **Reproducibility.** Every run takes an explicit seed, and each experiment
+  condition is repeated over a fixed list of seeds.
+- **Dependencies** are listed in `requirements.txt`.
 
 ## Planned Repository Layout
 

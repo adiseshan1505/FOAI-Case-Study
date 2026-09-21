@@ -249,7 +249,7 @@ Each runner writes CSV tables and a PNG chart to `results/`. Useful flags:
 
 | Flag | Applies to | Effect |
 |---|---|---|
-| `--seeds N` | all runners | Use seeds `0..N-1` instead of the config's seed list |
+| `--seeds N` | all runners | Use seeds `0..N-1` instead of the config's seed list. Pair it with `--out`, or the committed charts in `results/` are overwritten |
 | `--config PATH` | all runners | Use a different config (default `experiments/configs/default.yaml`) |
 | `--out DIR` | all runners | Write results somewhere other than `results/` |
 | `--with-pure-impact` | `run_matrix.py` | Add a ranking by velocity × reach alone, without the suspicion weighting |
@@ -259,6 +259,9 @@ Each runner writes CSV tables and a PNG chart to `results/`. Useful flags:
 | `--with-static` | `run_shock.py` | Add an ablation whose impact ranking is frozen when a claim is first seen |
 | `--condition C6` | `run_lambda_sweep.py` | Which condition to sweep |
 | `--lams 0,1,10,100` | `run_lambda_sweep.py` | The λ values to try |
+
+For a quick look that leaves the committed results untouched, run for example
+`python experiments/run_matrix.py --seeds 5 --out /tmp/demo`.
 
 All parameters (graph size, budget `B`, λ, shock size, KB coverage, and so on)
 live in `experiments/configs/default.yaml`.
@@ -330,7 +333,7 @@ FOAI-Case-Study/
 | `experiments/` | Configs, shared helpers (`common.py`), and runners for the C1–C6 matrix, the shock runs, the λ sweep, and the sensitivity sweeps |
 | `tests/` | Unit tests for the cascade, inference, policies, metrics, config, and full simulation runs |
 | `results/` | Generated charts and summary tables. Raw per-run CSVs (`*_runs.csv`) are gitignored; the runners recreate them |
-| `report/` | Write-up and figures (not started) |
+| `report/` | `Infodemic_Project_Walkthrough.pdf`, a walkthrough of what the project does, how it was built and how the code works. A formal write-up has not been started |
 
 ## How It Is Modeled
 

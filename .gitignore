@@ -6,7 +6,7 @@ venv/
 .ipynb_checkpoints/
 *.egg-info/
 .DS_Store
-.docs/
+docs/
 # Raw per-run results: regenerated deterministically by the experiment runners.
 # Charts and summary tables in results/ stay tracked because the README embeds them.
 results/*_runs.csv

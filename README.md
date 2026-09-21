@@ -185,25 +185,71 @@ How the matrix maps to the hypotheses:
 
 ## Planned Repository Layout
 
-> The code below does not exist yet. This is the intended structure.
+> Only `README.md` and `docs/` exist so far. Everything else is the intended
+> structure (Python).
 
 ```text
 FOAI-Case-Study/
 ├── README.md
-├── Infodemic_Containment_Problem_Statement.pdf   # Original problem statement
-├── Infodemic_Containment_Problem_Statement.docx
+├── requirements.txt
+├── .gitignore
+├── docs/
+│   ├── Infodemic_Containment_Problem_Statement.pdf
+│   └── Infodemic_Containment_Problem_Statement.docx
 ├── src/
-│   ├── env/            # Scale-free graph, node states, Independent Cascade dynamics
-│   ├── agents/
-│   │   ├── spreader/   # Random and centrality-informed seeding, sockpuppets
-│   │   └── moderator/  # Random, FIFO, and impact-weighted policies
-│   ├── kb/             # Hand-authored knowledge base and Horn-clause inference
-│   ├── shock/          # Coordinated bot-swarm scenario
-│   └── metrics/        # Exposure, peak, containment, false positives, recovery
-├── experiments/        # C1–C6 configs, λ sweep, seed lists
-├── results/            # Raw run outputs and aggregated tables/plots
-└── report/             # Write-up and figures
+│   └── infodemic/
+│       ├── __init__.py
+│       ├── config.py
+│       ├── metrics.py
+│       ├── env/
+│       │   ├── __init__.py
+│       │   ├── network.py
+│       │   ├── cascade.py
+│       │   ├── claims.py
+│       │   └── simulation.py
+│       ├── agents/
+│       │   ├── __init__.py
+│       │   ├── spreader.py
+│       │   └── moderator.py
+│       ├── policies/
+│       │   ├── __init__.py
+│       │   ├── spreader_policies.py
+│       │   └── moderator_policies.py
+│       ├── kb/
+│       │   ├── __init__.py
+│       │   ├── facts.py
+│       │   ├── rules.py
+│       │   └── inference.py
+│       └── scenarios/
+│           ├── __init__.py
+│           └── bot_swarm.py
+├── experiments/
+│   ├── configs/
+│   │   ├── default.yaml
+│   │   └── conditions.yaml
+│   ├── run_matrix.py
+│   ├── run_lambda_sweep.py
+│   └── run_shock.py
+├── tests/
+│   ├── test_cascade.py
+│   ├── test_inference.py
+│   └── test_policies.py
+├── results/
+└── report/
 ```
+
+| Path | Responsibility |
+|---|---|
+| `src/infodemic/env/` | Scale-free graph, node states, claims with hidden labels, Independent Cascade dynamics, and the round-by-round simulation loop |
+| `src/infodemic/agents/` | The two agent types: spreader (post, reshare, sockpuppets) and moderator (flag, quarantine, counter-claim, escalate) |
+| `src/infodemic/policies/` | Swappable strategies: random and centrality-informed seeding; random, FIFO, and impact-weighted moderation |
+| `src/infodemic/kb/` | Hand-authored facts and rules, and Horn-clause inference for verifying claims |
+| `src/infodemic/scenarios/` | The coordinated bot-swarm shock |
+| `src/infodemic/metrics.py` | Total exposure, peak infection, time-to-containment, false-positive rate, post-shock recovery time |
+| `experiments/` | Configs and runners for the C1–C6 matrix, the λ sweep, and the shock runs, including seed lists |
+| `tests/` | Unit tests for the cascade, inference, and policy logic |
+| `results/` | Raw run outputs and aggregated tables and plots |
+| `report/` | Write-up and figures |
 
 ## Project Status
 

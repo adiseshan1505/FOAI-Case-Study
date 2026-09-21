@@ -329,7 +329,7 @@ FOAI-Case-Study/
 | `src/infodemic/metrics.py` | Total exposure, peak infection, time-to-containment, false-positive rate, post-shock recovery time |
 | `experiments/` | Configs, shared helpers (`common.py`), and runners for the C1–C6 matrix, the shock runs, the λ sweep, and the sensitivity sweeps |
 | `tests/` | Unit tests for the cascade, inference, policies, metrics, config, and full simulation runs |
-| `results/` | Generated CSV tables and charts |
+| `results/` | Generated charts and summary tables. Raw per-run CSVs (`*_runs.csv`) are gitignored; the runners recreate them |
 | `report/` | Write-up and figures (not started) |
 
 ## How It Is Modeled

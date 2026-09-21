@@ -11,6 +11,7 @@ A multi-agent adversarial simulation for the Foundations of AI (FOAI) case study
 
 ## Table of Contents
 
+- [Quickstart](#quickstart)
 - [Overview](#overview)
 - [The Problem](#the-problem)
 - [Agents](#agents)
@@ -28,6 +29,24 @@ A multi-agent adversarial simulation for the Foundations of AI (FOAI) case study
 - [Results](#results)
 - [Project Status](#project-status)
 - [References](#references)
+
+---
+
+## Quickstart
+
+Requires Python 3.10 or newer. From the repository root:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev]"
+pytest                                    
+python experiments/run_matrix.py          # then open results/matrix_exposure.png
+```
+
+Two more runners cover the rest of the study: `run_shock.py` (bot-swarm shock)
+and `run_lambda_sweep.py` (the λ trade-off). All charts and CSV tables are
+written to `results/`. See [Getting Started](#getting-started) for flags and
+configuration.
 
 ---
 

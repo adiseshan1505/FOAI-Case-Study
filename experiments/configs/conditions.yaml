@@ -1,0 +1,7 @@
+conditions:
+  C1: {spreader: random,     moderator: random}
+  C2: {spreader: random,     moderator: fifo}
+  C3: {spreader: random,     moderator: impact_weighted}
+  C4: {spreader: centrality, moderator: random}
+  C5: {spreader: centrality, moderator: fifo}
+  C6: {spreader: centrality, moderator: impact_weighted}

@@ -209,8 +209,7 @@ Design choices:
 
 ## Planned Repository Layout
 
-> Only `README.md` and `docs/` exist so far. Everything else is the intended
-> structure (Python).
+> The scaffold below is in place. Python modules are stubs with no logic yet.
 
 ```text
 FOAI-Case-Study/

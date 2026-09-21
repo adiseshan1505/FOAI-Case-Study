@@ -53,6 +53,26 @@ def test_shock_raises_exposure_and_records_recovery():
         assert calm.recovery_time is None and shocked.recovery_time is not None
 
 
+def test_spreader_deploys_sockpuppets_only_when_adaptive():
+    adaptive = Simulation(SimConfig(), "centrality", "impact_weighted", seed=0)
+    adaptive.run()
+    fixed = Simulation(override(SimConfig(), {"spreader.max_sockpuppets": 0}), "centrality", "impact_weighted", seed=0)
+    fixed.run()
+    assert adaptive.spreader.sockpuppets and all(adaptive.net.is_bot(n) for n in adaptive.spreader.sockpuppets)
+    assert not fixed.spreader.sockpuppets
+
+
+def test_adaptation_does_not_hurt_the_spreader():
+    def exposure(cfg):
+        return sum(
+            run_simulation(cfg, s, "impact_weighted", seed).metrics.total_exposure
+            for s in ("random", "centrality")
+            for seed in range(6)
+        )
+
+    assert exposure(SimConfig()) >= exposure(override(SimConfig(), {"spreader.max_sockpuppets": 0}))
+
+
 def test_zero_budget_moderator_never_acts():
     cfg = override(SimConfig(), {"moderator.budget_per_round": 0})
     assert run_simulation(cfg, "random", "fifo", seed=0).metrics.takedowns == 0

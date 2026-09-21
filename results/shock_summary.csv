@@ -1,9 +1,9 @@
 condition,spreader,moderator,recovery_time,recovered,total_exposure,peak_infection,false_positives,recovered_within_k
-C1,random,random,19.233,0.933,1227.567,121.133,0.333,0.3
-C2,random,fifo,18.333,0.967,1234.433,117.567,0.167,0.433
-C3,random,impact_weighted,10.233,0.967,576.767,96.3,0.933,0.867
-C3s,random,impact_static,14.8,0.967,760.733,94.2,0.733,0.567
-C4,centrality,random,19.5,0.967,3055.667,338.867,0.2,0.2
-C5,centrality,fifo,19.167,0.967,3318.467,346.367,0.067,0.133
-C6,centrality,impact_weighted,13.567,0.967,1845.8,305.9,0.933,0.867
-C6s,centrality,impact_static,19.4,1.0,2153.633,310.567,0.7,0.2
+C1,random,random,17.833,0.933,1195.467,117.0,0.4,0.433
+C2,random,fifo,18.067,0.933,1320.8,121.067,0.133,0.367
+C3,random,impact_weighted,10.8,1.0,606.267,94.667,0.767,0.833
+C3s,random,impact_static,13.4,0.967,746.1,95.967,0.5,0.833
+C4,centrality,random,18.9,0.967,3320.633,348.4,0.233,0.2
+C5,centrality,fifo,20.333,0.933,3592.533,347.6,0.067,0.067
+C6,centrality,impact_weighted,13.267,1.0,2010.467,313.367,1.167,0.833
+C6s,centrality,impact_static,18.667,0.967,2485.267,313.8,0.867,0.3

@@ -26,11 +26,18 @@ GRID = "#e1e0d9"
 BASELINE = "#c3c2b7"
 
 BLUE, ORANGE, AQUA = "#2a78d6", "#eb6834", "#1baf7a"
-MODERATOR_COLORS = {"random": BLUE, "fifo": ORANGE, "impact_weighted": AQUA, "impact_static": AQUA}
+MODERATOR_COLORS = {
+    "random": BLUE,
+    "fifo": ORANGE,
+    "impact_weighted": AQUA,
+    "impact_only": AQUA,
+    "impact_static": AQUA,
+}
 MODERATOR_LABELS = {
     "random": "Random",
     "fifo": "FIFO",
     "impact_weighted": "Impact-weighted",
+    "impact_only": "Impact only (no suspicion)",
     "impact_static": "Impact-weighted (static)",
 }
 SPREADER_LABELS = {"random": "Random targeting", "centrality": "Centrality-informed"}

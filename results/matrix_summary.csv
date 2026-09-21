@@ -1,7 +1,9 @@
 condition,spreader,moderator,total_exposure,peak_infection,time_to_containment,false_positives,false_positive_rate,total_exposure_std,peak_infection_std,time_to_containment_std,false_positives_std,false_positive_rate_std
-C1,random,random,434.533,40.267,32.033,0.533,0.014,113.225,13.879,9.786,0.819,0.022
-C2,random,fifo,451.4,41.0,35.133,0.4,0.01,138.538,17.628,11.614,0.621,0.016
-C3,random,impact_weighted,232.233,26.167,28.0,0.867,0.019,72.083,9.147,12.27,1.137,0.024
-C4,centrality,random,857.633,68.6,34.633,0.367,0.008,162.231,16.323,10.473,0.556,0.013
-C5,centrality,fifo,933.767,74.767,38.267,0.167,0.003,167.967,15.688,11.329,0.379,0.008
-C6,centrality,impact_weighted,234.2,29.033,30.333,0.9,0.018,68.433,10.902,15.057,1.094,0.022
+C1,random,random,466.3,45.5,33.2,0.433,0.011,114.911,12.749,12.363,0.568,0.014
+C2,random,fifo,506.633,44.233,35.367,0.3,0.007,129.191,11.655,12.626,0.596,0.014
+C3,random,impact_weighted,252.967,27.133,27.333,0.633,0.014,80.835,8.386,10.189,0.765,0.017
+C3p,random,impact_only,283.367,28.767,29.1,0.6,0.012,74.796,9.427,10.755,0.814,0.016
+C4,centrality,random,1073.167,83.233,33.5,0.633,0.015,167.511,14.59,10.418,0.718,0.016
+C5,centrality,fifo,1209.0,87.8,37.167,0.3,0.006,161.875,16.317,9.749,0.466,0.01
+C6,centrality,impact_weighted,442.233,40.233,26.6,1.167,0.023,100.377,13.242,9.658,1.206,0.023
+C6p,centrality,impact_only,442.767,40.8,31.667,1.067,0.02,87.873,10.466,13.314,0.98,0.018

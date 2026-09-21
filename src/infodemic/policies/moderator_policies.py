@@ -27,8 +27,9 @@ class FIFOModeration:
 class ImpactWeightedModeration:
     """Ranks claims by impact (velocity x reach of current carriers), weighted by suspicion.
 
-    With refresh=False the score is frozen when a claim is first seen, which
-    models a static queue that ignores how the spread evolves afterwards.
+    With use_suspicion=False it ranks by velocity x reach alone, as in the
+    problem statement. With refresh=False the score is frozen when a claim is
+    first seen, which models a static queue that ignores how the spread evolves.
     """
 
     def __init__(self, refresh: bool = True, use_suspicion: bool = True):
@@ -46,7 +47,8 @@ class ImpactWeightedModeration:
                 scores[view.id] = self._score(view)
             else:
                 scores[view.id] = self._frozen.setdefault(view.id, self._score(view))
-        ranked = sorted(queue, key=lambda v: (-scores[v.id], -v.p_false, v.id))
+        tie_break = (lambda v: -v.p_false) if self.use_suspicion else (lambda v: 0.0)
+        ranked = sorted(queue, key=lambda v: (-scores[v.id], tie_break(v), v.id))
         return ranked[:budget]
 
 
@@ -55,6 +57,7 @@ def make_moderator_policy(name: str) -> ModeratorPolicy:
         "random": RandomModeration,
         "fifo": FIFOModeration,
         "impact_weighted": ImpactWeightedModeration,
+        "impact_only": lambda: ImpactWeightedModeration(use_suspicion=False),
         "impact_static": lambda: ImpactWeightedModeration(refresh=False),
     }
     if name not in factories:

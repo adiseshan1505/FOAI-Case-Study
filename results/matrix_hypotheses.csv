@@ -1,8 +1,10 @@
 hypothesis,comparison,mean_diff,ci_low,ci_high,supported
-H1,centrality - random targeting | random moderator,423.1,364.97,483.0,True
-H1,centrality - random targeting | fifo moderator,482.37,426.43,539.73,True
-H1,centrality - random targeting | impact_weighted moderator,1.97,-24.03,29.67,False
-H2,fifo - impact_weighted | random spreader,219.17,168.2,272.74,True
-H2,random - impact_weighted | random spreader,202.3,161.77,245.77,True
-H2,fifo - impact_weighted | centrality spreader,699.57,640.96,758.83,True
-H2,random - impact_weighted | centrality spreader,623.43,560.49,686.47,True
+H1,centrality - random targeting | random moderator,606.87,554.47,662.73,True
+H1,centrality - random targeting | fifo moderator,702.37,643.06,762.2,True
+H1,centrality - random targeting | impact_weighted moderator,189.27,151.7,228.67,True
+H2,fifo - impact_weighted | random spreader,253.67,201.63,308.34,True
+H2,random - impact_weighted | random spreader,213.33,167.53,266.0,True
+H2,fifo - impact_only | random spreader,223.27,170.5,279.27,True
+H2,fifo - impact_weighted | centrality spreader,766.77,706.83,825.37,True
+H2,random - impact_weighted | centrality spreader,630.93,579.83,683.43,True
+H2,fifo - impact_only | centrality spreader,766.23,699.2,829.87,True

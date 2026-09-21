@@ -27,6 +27,7 @@ A multi-agent adversarial simulation for the Foundations of AI (FOAI) case study
 - [Repository Layout](#repository-layout)
 - [How It Is Modeled](#how-it-is-modeled)
 - [Results](#results)
+- [Limitations](#limitations)
 - [Project Status](#project-status)
 - [References](#references)
 
@@ -43,8 +44,9 @@ pytest
 python experiments/run_matrix.py          # then open results/matrix_exposure.png
 ```
 
-Two more runners cover the rest of the study: `run_shock.py` (bot-swarm shock)
-and `run_lambda_sweep.py` (the λ trade-off). All charts and CSV tables are
+Three more runners cover the rest of the study: `run_shock.py` (bot-swarm
+shock), `run_lambda_sweep.py` (the λ trade-off), and `run_sensitivity.py`
+(robustness to the default settings). All charts and CSV tables are
 written to `results/`. See [Getting Started](#getting-started) for flags and
 configuration.
 
@@ -240,6 +242,7 @@ pytest                                   # unit and simulation tests
 python experiments/run_matrix.py         # C1-C6 matrix (H1, H2)
 python experiments/run_shock.py          # bot-swarm shock in every condition (H3)
 python experiments/run_lambda_sweep.py   # exposure vs. false-positive frontier (RQ3)
+python experiments/run_sensitivity.py    # does H2 survive other budgets, KB coverage, adaptation? (~1.5 min)
 ```
 
 Each runner writes CSV tables and a PNG chart to `results/`. Useful flags:
@@ -249,6 +252,9 @@ Each runner writes CSV tables and a PNG chart to `results/`. Useful flags:
 | `--seeds N` | all runners | Use seeds `0..N-1` instead of the config's seed list |
 | `--config PATH` | all runners | Use a different config (default `experiments/configs/default.yaml`) |
 | `--out DIR` | all runners | Write results somewhere other than `results/` |
+| `--with-pure-impact` | `run_matrix.py` | Add a ranking by velocity × reach alone, without the suspicion weighting |
+| `--param NAME` | `run_sensitivity.py` | Sweep one parameter (`moderator.budget_per_round`, `moderator.kb_coverage`, or `spreader.max_sockpuppets`) instead of all three |
+| `--values 1,2,4` | `run_sensitivity.py` | Values to try for `--param` |
 | `--k N` | `run_shock.py` | Rounds allowed for recovery in the H3 check (default 15) |
 | `--with-static` | `run_shock.py` | Add an ablation whose impact ranking is frozen when a claim is first seen |
 | `--condition C6` | `run_lambda_sweep.py` | Which condition to sweep |
@@ -302,6 +308,7 @@ FOAI-Case-Study/
 │   ├── common.py
 │   ├── run_matrix.py
 │   ├── run_lambda_sweep.py
+│   ├── run_sensitivity.py
 │   └── run_shock.py
 ├── tests/
 │   ├── test_cascade.py
@@ -320,7 +327,7 @@ FOAI-Case-Study/
 | `src/infodemic/kb/` | Hand-authored facts and rules, and Horn-clause inference for verifying claims |
 | `src/infodemic/scenarios/` | The coordinated bot-swarm shock |
 | `src/infodemic/metrics.py` | Total exposure, peak infection, time-to-containment, false-positive rate, post-shock recovery time |
-| `experiments/` | Configs, shared helpers (`common.py`), and runners for the C1–C6 matrix, the λ sweep, and the shock runs |
+| `experiments/` | Configs, shared helpers (`common.py`), and runners for the C1–C6 matrix, the shock runs, the λ sweep, and the sensitivity sweeps |
 | `tests/` | Unit tests for the cascade, inference, policies, metrics, config, and full simulation runs |
 | `results/` | Generated CSV tables and charts |
 | `report/` | Write-up and figures (not started) |
@@ -350,8 +357,10 @@ false.
 **Moderator decisions.**
 - *Selection:* `random`, `fifo`, or `impact_weighted`. Impact is velocity × reach,
   multiplied by the estimated probability of falsehood so that checks are not
-  spent on likely-true claims. `impact_static` freezes that score when a claim is
-  first seen, which isolates re-ranking from impact scoring in the shock runs.
+  spent on likely-true claims. Two ablations are available: `impact_only` ranks by
+  velocity × reach alone, as the problem statement words it, and `impact_static`
+  freezes the score when a claim is first seen, which isolates re-ranking from
+  impact scoring in the shock runs.
 - *Verified false:* quarantine, which halts spread. A separate counter-claim
   action is not modeled.
 - *Unresolved:* under the default `adaptive` rule the moderator rate-limits
@@ -364,10 +373,14 @@ false.
 
 **Spreader.** Each spreader seeds false claims at random nodes or at hubs (top 5%
 by degree centrality). It sees only the public log of suppressions. If one of its
-own claims was suppressed in the last three rounds, it deploys sockpuppets, posts
-from those fresh identities (which have no credibility history), and has them
-reshare its strongest live claim. Sockpuppets are extra nodes linked to targeted
-accounts; they carry claims but are never counted as exposed users.
+own claims was suppressed in the last three rounds, it deploys sockpuppets and has
+them reshare its strongest live claim, while continuing to seed its own posts as
+before. Sockpuppets are extra nodes linked to accounts chosen by the same
+targeting policy; they carry claims but are never counted as exposed users.
+Setting `spreader.max_sockpuppets: 0` turns the adaptation off, which is how its
+effect is measured. An earlier version made the spreader post from sockpuppets
+instead of seeding, which hurt the centrality-informed spreader; the current
+design was chosen so that adapting never costs the spreader its own seeding.
 
 **Bot-swarm shock.** At the shock round, `num_spreaders` extra non-adaptive
 spreaders post simultaneously for `duration` rounds, using the same targeting
@@ -384,8 +397,8 @@ paired bootstrap.
 
 Default config, 30 seeds per condition. The moderator's budget `B = 2` and the
 spreader's 3 posts per round were chosen so that verification is scarce; the
-results have not been checked for sensitivity to those settings. Full tables are
-in `results/`.
+[sensitivity analysis](#sensitivity-analysis) below shows how much the H2 result
+depends on that choice. Full tables are in `results/`.
 
 ### H1 and H2: informed play vs. uninformed play
 
@@ -393,26 +406,29 @@ in `results/`.
 
 | Spreader \ Moderator | Random | FIFO | Impact-weighted |
 |---|---|---|---|
-| **Random targeting** | C1: 435 | C2: 451 | C3: 232 |
-| **Centrality-informed** | C4: 858 | C5: 934 | C6: 234 |
+| **Random targeting** | C1: 466 | C2: 507 | C3: 253 |
+| **Centrality-informed** | C4: 1073 | C5: 1209 | C6: 442 |
 
 Mean total exposure. Differences below are paired by seed, with 95% bootstrap
 confidence intervals.
 
 | Hypothesis | Comparison | Mean difference | 95% CI | Supported |
 |---|---|---|---|---|
-| H1 | Centrality − random targeting, random moderator | +423 | [365, 483] | Yes |
-| H1 | Centrality − random targeting, FIFO moderator | +482 | [426, 540] | Yes |
-| H1 | Centrality − random targeting, impact-weighted moderator | +2 | [−24, 30] | **No** |
-| H2 | FIFO − impact-weighted, random spreader | +219 | [168, 273] | Yes |
-| H2 | Random − impact-weighted, random spreader | +202 | [162, 246] | Yes |
-| H2 | FIFO − impact-weighted, centrality spreader | +700 | [641, 759] | Yes |
-| H2 | Random − impact-weighted, centrality spreader | +623 | [560, 686] | Yes |
+| H1 | Centrality − random targeting, random moderator | +607 | [554, 663] | Yes |
+| H1 | Centrality − random targeting, FIFO moderator | +702 | [643, 762] | Yes |
+| H1 | Centrality − random targeting, impact-weighted moderator | +189 | [152, 229] | Yes |
+| H2 | FIFO − impact-weighted, random spreader | +254 | [202, 308] | Yes |
+| H2 | Random − impact-weighted, random spreader | +213 | [168, 266] | Yes |
+| H2 | FIFO − impact-weighted, centrality spreader | +767 | [707, 825] | Yes |
+| H2 | Random − impact-weighted, centrality spreader | +631 | [580, 683] | Yes |
 
-H1 holds against the random and FIFO moderators but not against the
-impact-weighted one. A likely reason is that hub-seeded claims have large impact
-scores, so the impact-weighted moderator checks them first; this explanation has
-not been tested separately.
+Hub targeting helps the spreader against every moderator, but the impact-weighted
+moderator cuts that advantage from roughly 600 to 700 extra exposures down to 189.
+
+Ranking by velocity × reach alone, without the suspicion weighting, gives almost
+the same result (C3p: 283, C6p: 443, against 253 and 442), and still beats FIFO by
++223 [171, 279] and +766 [699, 830]. So H2 does not depend on the suspicion
+weighting added on top of the problem statement's ranking.
 
 ### H3: bot-swarm shock
 
@@ -420,19 +436,22 @@ not been tested separately.
 
 | Condition | Total exposure | Mean recovery (rounds) | Recovered within 15 rounds |
 |---|---|---|---|
-| C1 random / random | 1228 | 19.2 | 30% |
-| C2 random / FIFO | 1234 | 18.3 | 43% |
-| C3 random / impact-weighted | 577 | 10.2 | 87% |
-| C4 centrality / random | 3056 | 19.5 | 20% |
-| C5 centrality / FIFO | 3318 | 19.2 | 13% |
-| C6 centrality / impact-weighted | 1846 | 13.6 | 87% |
+| C1 random / random | 1195 | 17.8 | 43% |
+| C2 random / FIFO | 1321 | 18.1 | 37% |
+| C3 random / impact-weighted | 606 | 10.8 | 83% |
+| C4 centrality / random | 3321 | 18.9 | 20% |
+| C5 centrality / FIFO | 3593 | 20.3 | 7% |
+| C6 centrality / impact-weighted | 2010 | 13.3 | 83% |
 
-Recovery is faster with the impact-weighted moderator, by 5.6 to 9.0 rounds
+Recovery is faster with the impact-weighted moderator, by 5.6 to 7.3 rounds
 against FIFO and random (all four 95% CIs exclude zero). Nearly all runs
 (93% or more) eventually recover, so the difference is speed, not whether the
 system recovers at all. In the `--with-static` ablation, freezing the impact
-ranking costs 4.6 rounds against random targeting and 5.8 against centrality
-targeting, and under centrality targeting it recovers no faster than FIFO.
+ranking costs 2.6 rounds against random targeting (CI [0.07, 5.0], only just
+excluding zero) and 5.4 against centrality targeting. Against the centrality
+spreader the frozen ranking recovers about as slowly as FIFO and random
+(18.7 rounds, against 20.3 and 18.9), so re-ranking under load is what
+carries the benefit there.
 
 ### RQ3: the λ trade-off
 
@@ -442,15 +461,63 @@ Condition C6, no shock.
 
 | λ | Total exposure | False positives per run | False-positive rate |
 |---|---|---|---|
-| 0 | 175 | 8.20 | 13.8% |
-| 1 | 181 | 3.97 | 7.4% |
-| 5 | 198 | 1.77 | 3.4% |
-| 10 | 234 | 0.90 | 1.8% |
-| 50 | 344 | 0.10 | 0.2% |
-| 200 | 430 | 0.07 | 0.1% |
+| 0 | 374 | 7.73 | 12.9% |
+| 1 | 378 | 3.80 | 6.8% |
+| 5 | 417 | 1.50 | 2.8% |
+| 10 | 442 | 1.17 | 2.3% |
+| 50 | 567 | 0.20 | 0.4% |
+| 200 | 651 | 0.27 | 0.6% |
 
-Exposure falls slowly as λ drops from 5 to 0 while false positives keep rising,
-so most of the benefit of aggression is captured by moderate values of λ.
+The frontier is steep on the cautious side and flat on the aggressive side.
+Lowering λ from 200 to 10 cuts exposure by about 209 for roughly 0.9 extra false
+positives per run, while going from 5 to 0 cuts only about 43 more for about 6
+extra. Most of the benefit of aggression is captured by moderate λ.
+
+The false-positive rate does not reach zero at very high λ. That floor (about
+0.27 per run) comes from the 5% error rate of human review: with review accuracy
+set to 1.0, false positives at λ = 200 drop to 0.00.
+
+### Sensitivity analysis
+
+`run_sensitivity.py` repeats all six conditions while varying one setting at a
+time. H2 (impact-weighted beats both FIFO and random) is supported in 24 of the
+28 settings tested. The four failures are all at a large budget.
+
+| Budget `B` | FIFO − impact-weighted, random spreader | FIFO − impact-weighted, centrality spreader | H2 |
+|---|---|---|---|
+| 1 | +274 | +692 | Holds |
+| 2 (default) | +254 | +767 | Holds |
+| 3 | +111 | +417 | Holds |
+| 5 | +4.4 | +2.3 | Not supported |
+| 8 | +2.5 | +4.1 | Not supported |
+
+![Sensitivity to the verification budget](results/sensitivity_budget_per_round.png)
+
+Prioritization only matters while verification is scarce. During the campaign
+about four claims arrive per round (three from the spreader, about one organic),
+so once `B` reaches 5 every policy can check nearly everything and they converge. H2 holds at every knowledge-base coverage tested (0.3 to 0.9)
+and every sockpuppet cap tested (0 to 20). The adaptation effect can be read
+straight off the sockpuppet sweep: the adaptive spreader (10 sockpuppets) causes
+56 to 114 more exposures than the fixed one (0 sockpuppets), depending on the
+condition.
+
+## Limitations
+
+- **No dataset is used, by design.** The problem statement specifies synthetic
+  predicates, a generated scale-free graph, and a small hand-authored knowledge
+  base. Results characterize the decision strategies, not real-world fact-checking
+  accuracy or real platform behavior.
+- **Hand-set parameters.** Reshare probability, claim arrival rate, evidence
+  noise, the weights that turn evidence into a probability of falsehood, and the
+  moderator's lookahead are fixed choices. Only λ, the budget, KB coverage, and
+  the sockpuppet cap have been swept.
+- **One graph family.** Every run uses a 750-node Barabási–Albert graph. Other
+  sizes and real network topologies have not been tried.
+- **Simplified actions.** Counter-claims are not a separate action, and the
+  spreader does not mix in true claims to build credibility.
+- **Fixed seeds.** Seeds 0 to 29 are fixed, so every result is exactly
+  reproducible. The confidence intervals reflect variation across those 30 graphs
+  and claim streams.
 
 ## Project Status
 
@@ -461,8 +528,8 @@ so most of the benefit of aggression is captured by moderate values of λ.
 | Knowledge base and Horn-clause inference | Done |
 | Spreader and moderator policies | Done |
 | Bot-swarm shock scenario | Done |
-| C1–C6 experiments and λ sweep | Done for the default config |
-| Sensitivity analysis (budget `B`, KB coverage, graph size) | Not started |
+| C1–C6 experiments and λ sweep | Done |
+| Sensitivity analysis (budget `B`, KB coverage, sockpuppet cap) | Done; graph size and reshare probability not swept |
 | Analysis and report | Not started |
 
 ## References

@@ -41,6 +41,9 @@ def test_hypotheses(runs: pd.DataFrame) -> pd.DataFrame:
         for baseline in ("fifo", "random"):
             diff = paired_difference(exposure(runs, s, baseline), exposure(runs, s, "impact_weighted"), rng)
             rows.append(("H2", f"{baseline} - impact_weighted | {s} spreader", *diff))
+        if "impact_only" in set(runs.moderator):
+            diff = paired_difference(exposure(runs, s, "fifo"), exposure(runs, s, "impact_only"), rng)
+            rows.append(("H2", f"fifo - impact_only | {s} spreader", *diff))
     table = pd.DataFrame(rows, columns=["hypothesis", "comparison", "mean_diff", "ci_low", "ci_high"])
     table["supported"] = table.ci_low > 0
     return table
@@ -72,9 +75,15 @@ def plot_exposure(summary: pd.DataFrame, path) -> None:
 
 
 def main() -> None:
-    args = base_parser(__doc__).parse_args()
+    parser = base_parser(__doc__)
+    parser.add_argument(
+        "--with-pure-impact", action="store_true", help="add a velocity x reach ranking with no suspicion weighting"
+    )
+    args = parser.parse_args()
     cfg, seeds = resolve(args)
     conditions = load_conditions(args.conditions)
+    if args.with_pure_impact:
+        conditions = {**conditions, "C3p": ("random", "impact_only"), "C6p": ("centrality", "impact_only")}
     runs, _ = collect(cfg, conditions, seeds, shock=False)
     runs.to_csv(args.out / "matrix_runs.csv", index=False)
 

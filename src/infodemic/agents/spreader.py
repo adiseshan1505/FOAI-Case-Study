@@ -19,8 +19,9 @@ class SpreaderAgent:
     """Posts false claims and reacts to visible moderator activity.
 
     The spreader sees only the public log of suppressions. When one of its own
-    claims was suppressed recently it becomes alarmed: it deploys sockpuppets,
-    posts from those fresh identities, and has them reshare its strongest claim.
+    claims was suppressed recently it becomes alarmed: it deploys sockpuppets and
+    has them reshare its strongest live claim, reaching new hubs without giving up
+    its own seeding. Setting max_sockpuppets to 0 turns this adaptation off.
     """
 
     def __init__(
@@ -40,7 +41,6 @@ class SpreaderAgent:
         self.adaptive = adaptive
         self.claim_ids: list[int] = []
         self.sockpuppets: list[int] = []
-        self._uses: dict[int, int] = {}
 
     def act(self, sim: Simulation, r: int) -> None:
         if not self.start <= r < self.end:
@@ -49,8 +49,8 @@ class SpreaderAgent:
         if alarmed:
             self._deploy_sockpuppets(sim)
         for _ in range(self.cfg.posts_per_round):
-            claim = sim.post_claim(self._pick_source(sim, alarmed), True, "spreader", self.rng)
-            self.claim_ids.append(claim.id)
+            source = self.policy.pick(sim.net, 1, self.rng)[0]
+            self.claim_ids.append(sim.post_claim(source, True, "spreader", self.rng).id)
         if alarmed:
             self._reshare(sim)
 
@@ -62,13 +62,6 @@ class SpreaderAgent:
         for _ in range(min(self.cfg.sockpuppets_per_round, room)):
             links = self.policy.pick(sim.net, self.cfg.sockpuppet_links, self.rng)
             self.sockpuppets.append(sim.net.add_sockpuppet(links))
-
-    def _pick_source(self, sim: Simulation, alarmed: bool) -> int:
-        if alarmed and self.sockpuppets:
-            node = min(self.sockpuppets, key=lambda n: self._uses.get(n, 0))
-            self._uses[node] = self._uses.get(node, 0) + 1
-            return node
-        return self.policy.pick(sim.net, 1, self.rng)[0]
 
     def _reshare(self, sim: Simulation) -> None:
         views = [sim.view(cid) for cid in self.claim_ids]

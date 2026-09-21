@@ -45,6 +45,12 @@ def test_suspicion_breaks_impact_ties(rng):
     assert ImpactWeightedModeration().select(queue, 1, rng)[0].id == 1
 
 
+def test_impact_only_ignores_suspicion(rng):
+    queue = [view(0, reach=10, p_false=0.9), view(1, reach=20, p_false=0.1)]
+    assert make_moderator_policy("impact_only").select(queue, 1, rng)[0].id == 1
+    assert make_moderator_policy("impact_weighted").select(queue, 1, rng)[0].id == 0
+
+
 def test_static_ranking_ignores_later_changes(rng):
     static, adaptive = ImpactWeightedModeration(refresh=False), ImpactWeightedModeration()
     before = [view(0, reach=100), view(1, reach=10)]
